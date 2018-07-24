@@ -1,0 +1,21 @@
+# Ignore all files
+*
+
+# Unignore files with extensions
+!*.*
+
+# Unignore dirs
+!*/
+
+# Ignore accidental extensions
+*.swp
+
+# Ignore vendored dependencies
+vendor/
+
+# Unignore utility top level files
+!Makefile
+!Dockerfile
+
+# Ignore the binary builds
+bin/
