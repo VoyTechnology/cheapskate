@@ -34,12 +34,13 @@ func init() {
 func setDefaults() {
 	settings.SetDefault("webhook.port", 8080)
 	settings.SetDefault("plugin.enable", true)
-	settings.SetDefault("plugin.disabled", "")
+	settings.SetDefault("plugin.disabled",
+		"tester_integration,tester_command")
 }
 
 func setOptions() {
 	flag.Bool("plugin.enable", true, "enable plugins")
-	flag.String("plugin.disabled", "", "list of plugins to disable")
+	flag.String("plugin.disabled", "", "list of plugins to disable, comma separated")
 	flag.Int("webhook.port", 0, "webhook port")
 
 	flag.Parse()

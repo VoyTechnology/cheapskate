@@ -2,9 +2,9 @@
 package plugins
 
 import (
-	"context"
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/cpssd-students/cheapskate/hook"
@@ -39,6 +39,10 @@ func (t Type) String() string {
 	return string(t)
 }
 
+// registedPlugins is generated when the `Load` function is called, and should
+// not be called directly. Instead, use the `Get` function.
+var registeredPlugins = make(map[string]Plugin)
+
 // Get the plugin based on its name.
 func Get(name string) (Plugin, error) {
 	p, exists := registeredPlugins[name]
@@ -67,10 +71,74 @@ type Plugin interface {
 	Register() string
 
 	// Do is send to actually do the request.
-	Do(context.Context, *Action) error
+	Do(*Action) error
 
-	// Used for integration
-	ServeHTTP(http.ResponseWriter, *http.Request)
+	// ServeHTTP must be present for
+	// ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+var compiledRegex = make(map[string]*regexp.Regexp)
+var commandPlugins = make(map[string]Plugin)
+
+// Load the plugins
+func Load() error {
+	if !settings.Get("plugin.enable").(bool) {
+		glog.Info("Not loading any plugins")
+		return nil
+	}
+
+	disabled := make(map[string]struct{})
+	for _, d := range strings.Split(settings.Get("plugin.disabled").(string), ",") {
+		disabled[d] = struct{}{}
+	}
+
+	for _, p := range plugins {
+		if _, exists := registeredPlugins[p.Name()]; exists {
+			return ErrPluginRegistered
+		}
+
+		if _, isDisabled := disabled[p.Name()]; isDisabled {
+			glog.Infof("Ignoring plugin %s - disabled", p.Name())
+			continue
+		}
+
+		glog.Infof("Registering plugin %s of type %s", p.Name(), p.Type())
+
+		switch p.Type() {
+		case IntegrationType:
+			handler, ok := p.(http.Handler)
+			if !ok {
+				glog.Fatalf(
+					"Plugin %s does not implement ServeHTTP",
+					p.Name())
+			}
+
+			if err := hook.RegisterHandleFunc(p.Register(), handler); err != nil {
+				return err
+			}
+		case CommandType:
+			if binded, exists := commandPlugins[p.Register()]; exists {
+				glog.Fatalf(
+					"Plugin %s tried to register command %s which is already binded to plugin %s",
+					p.Name(), binded.Name(),
+				)
+			}
+			commandPlugins[p.Register()] = p
+		case RegexType:
+			re, err := regexp.Compile(p.Register())
+			if err != nil {
+				glog.Fatalf(
+					"Plugin %s tried to register invalid regex %s: %v",
+					p.Name(), p.Register(), err,
+				)
+			}
+			compiledRegex[p.Register()] = re
+		}
+
+		registeredPlugins[p.Name()] = p
+	}
+
+	return nil
 }
 
 // Action specifies the action to be taken
@@ -92,44 +160,42 @@ type Action struct {
 	Response chan []byte
 }
 
-// Load the plugins
-func Load() error {
-	if !settings.Get("plugin.enable").(bool) {
-		glog.Info("Not loading any plugins")
-		return nil
+// AddAction to the action stream
+func AddAction(a *Action) {
+	glog.V(1).Infof("received action from %s", a.Origin.Name())
+	glog.V(2).Infof("data: %s", a.Data)
+
+	// TODO: This should probably be a channel with caching
+	if a.Target != nil {
+		glog.V(1).Infof("Sending directly to %s from %s",
+			a.Target.Name(), a.Origin.Name())
+
+		a.Target.Do(a)
+		return
 	}
 
-	disabled := make(map[string]struct{})
-	for _, d := range strings.Split(settings.Get("plugin.disabled").(string), ",") {
-		disabled[d] = struct{}{}
-	}
-
-	for _, p := range plugins {
-		if _, exists := registeredPlugins[p.Name()]; exists {
-			return ErrPluginRegistered
-		}
-
-		if _, isDisabled := disabled[p.Name()]; isDisabled {
-			glog.Infof("Not loading plugin %s - disabled", p.Name())
+	for _, p := range registeredPlugins {
+		if p.Name() == a.Origin.Name() {
+			continue
 		}
 
 		switch p.Type() {
-		default:
-			glog.Info("registering integration")
-			if err := hook.RegisterHandleFunc(p.Register(), p); err != nil {
-				return err
+		case CommandType:
+			if strings.HasPrefix(string(a.Data), p.Register()) {
+				glog.V(2).Infof("Sending action to command %s", p.Name())
+				p.Do(a)
 			}
+		case RegexType:
+			re, exists := compiledRegex[p.Name()]
+			if exists && re.Match(a.Data) {
+				glog.V(2).Infof("Sending action to regex %s", p.Name())
+				p.Do(a)
+			}
+		// This should mostly be handled by the individual target, but we catch
+		// it just in case
+		case IntegrationType:
+			glog.V(2).Infof("Sending action to integration %s", p.Name())
+			p.Do(a)
 		}
-
-		glog.Infof("Registering plugin %s of type %s", p.Name(), p.Type())
-		registeredPlugins[p.Name()] = p
 	}
-
-	return nil
-}
-
-// AddAction to the action stream
-func AddAction(a *Action) {
-	glog.Infof("received action from %s", a.Origin.Name())
-	a.Response <- []byte("done")
 }

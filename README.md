@@ -11,12 +11,12 @@ One and only true CPSSD Bot
 
 [1]: https://golang.org
 
-## Building
+## Running
 
-The project uses experimental, and soon to be enabled Go Modules, eliminating
-the need for specified `$GOPATH` variable. You can clone the repository wherever
-you feel is appropiate.
+The easiest way of running for development purposes is
 
-```bash
-vgo build
+```sh
+vgo run cheapskate.go --logtostderr --plugins.disabled=""
 ```
+
+Future instructions on deployment coming soon.
