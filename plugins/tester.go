@@ -43,6 +43,10 @@ func (p *testerIntegrationPlugin) Do(a *Action) error {
 func (p *testerIntegrationPlugin) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	p.msg = make(chan []byte)
 	data := []byte(req.URL.Query().Get("msg"))
+	if len(data) == 0 {
+		res.Write([]byte("empty message"))
+		return
+	}
 
 	a := &Action{
 		Origin: p,
@@ -53,6 +57,10 @@ func (p *testerIntegrationPlugin) ServeHTTP(res http.ResponseWriter, req *http.R
 
 	// We only respond once we get a response back from the system
 	res.Write(<-p.msg)
+}
+
+func (p *testerIntegrationPlugin) NoAction() {
+	p.msg <- []byte("")
 }
 
 // Registeres a tester
@@ -77,7 +85,7 @@ func (*testerCommandPlugin) Register() string {
 }
 
 func (p *testerCommandPlugin) Do(a *Action) error {
-	AddAction(&Action{
+	go AddAction(&Action{
 		Origin:  p,
 		Target:  a.Origin,
 		Command: "response",
@@ -87,3 +95,5 @@ func (p *testerCommandPlugin) Do(a *Action) error {
 	})
 	return nil
 }
+
+func (testerCommandPlugin) NoAction() {}

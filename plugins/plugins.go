@@ -73,6 +73,10 @@ type Plugin interface {
 	// Do is send to actually do the request.
 	Do(*Action) error
 
+	// This function is called when no command was triggered. Its up to the
+	// plugin to decide what to do with it.
+	NoAction()
+
 	// ServeHTTP must be present for
 	// ServeHTTP(http.ResponseWriter, *http.Request)
 }
@@ -132,7 +136,7 @@ func Load() error {
 					p.Name(), p.Register(), err,
 				)
 			}
-			compiledRegex[p.Register()] = re
+			compiledRegex[p.Name()] = re
 		}
 
 		registeredPlugins[p.Name()] = p
@@ -156,6 +160,10 @@ type Action struct {
 	// Data of the action
 	Data []byte
 
+	// Meta contains the metadata used to communicate using KVs between
+	// different. Totally depends on the implementation.
+	Meta map[string]string
+
 	// Response to the action. Given as a channel when something is done
 	Response chan []byte
 }
@@ -165,12 +173,15 @@ func AddAction(a *Action) {
 	glog.V(1).Infof("received action from %s", a.Origin.Name())
 	glog.V(2).Infof("data: %s", a.Data)
 
+	done := false
+
 	// TODO: This should probably be a channel with caching
 	if a.Target != nil {
 		glog.V(1).Infof("Sending directly to %s from %s",
 			a.Target.Name(), a.Origin.Name())
 
 		a.Target.Do(a)
+		done = true
 		return
 	}
 
@@ -183,19 +194,26 @@ func AddAction(a *Action) {
 		case CommandType:
 			if strings.HasPrefix(string(a.Data), p.Register()) {
 				glog.V(2).Infof("Sending action to command %s", p.Name())
-				p.Do(a)
+				done = true
+				go p.Do(a)
 			}
 		case RegexType:
-			re, exists := compiledRegex[p.Name()]
-			if exists && re.Match(a.Data) {
+			if re := compiledRegex[p.Name()]; re.Match(a.Data) {
 				glog.V(2).Infof("Sending action to regex %s", p.Name())
-				p.Do(a)
+				done = true
+				go p.Do(a)
 			}
 		// This should mostly be handled by the individual target, but we catch
 		// it just in case
 		case IntegrationType:
 			glog.V(2).Infof("Sending action to integration %s", p.Name())
-			p.Do(a)
+
+			done = true
+			go p.Do(a)
 		}
+	}
+
+	if !done {
+		a.Origin.NoAction()
 	}
 }

@@ -3,6 +3,8 @@
 package plugins
 
 var plugins = []Plugin{
-	&testerIntegrationPlugin{},
-	&testerCommandPlugin{},
+	new(testerIntegrationPlugin),
+	new(testerCommandPlugin),
+	new(angryPlugin),
+	new(appendPlugin),
 }
