@@ -1,5 +1,8 @@
 # Cheapskate
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/voytechnology/cheapskate)](https://goreportcard.com/report/github.com/voytechnology/cheapskate)
+[![Godoc Plugin Reference](https://godoc.org/github.com/VoyTechnology/cheapskate/plugins?status.svg)](https://godoc.org/github.com/VoyTechnology/cheapskate/plugins)
+
 One and only true CPSSD Bot
 
 ---
