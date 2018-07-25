@@ -8,4 +8,5 @@ var plugins = []Plugin{
 	new(angryPlugin),
 	new(appendPlugin),
 	new(clapPlugin),
+	new(uppercasePlugin),
 }
