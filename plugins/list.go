@@ -7,4 +7,5 @@ var plugins = []Plugin{
 	new(testerCommandPlugin),
 	new(angryPlugin),
 	new(appendPlugin),
+	new(clapPlugin),
 }
