@@ -124,7 +124,7 @@ func Load() error {
 			if binded, exists := commandPlugins[p.Register()]; exists {
 				glog.Fatalf(
 					"Plugin %s tried to register command %s which is already binded to plugin %s",
-					p.Name(), binded.Name(),
+					p.Name(), p.Register(), binded.Name(),
 				)
 			}
 			commandPlugins[p.Register()] = p
