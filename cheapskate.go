@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	flag "github.com/spf13/pflag"
+	"github.com/cpssd-students/cheapskate/hook"
+	"github.com/cpssd-students/cheapskate/plugins"
 
-	"github.com/cpssd-students/cheapskate/settings"
+	_ "github.com/cpssd-students/cheapskate/settings"
 )
 
 func main() {
@@ -17,11 +18,13 @@ func main() {
 }
 
 func run() error {
-	flag.Parse()
+	if err := plugins.Load(); err != nil {
+		return err
+	}
 
-	http.HandleFunc("/", handleFunc)
-
-	http.ListenAndServe(fmt.Sprintf(":%d", settings.Get("webhook.port").(int)), nil)
+	if err := hook.Run(); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -4,10 +4,14 @@ package settings
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/viper"
+
+	// Make sure glog registers its flags
+	_ "github.com/golang/glog"
 )
 
 var settings *viper.Viper
@@ -23,16 +27,20 @@ func init() {
 	setOptions()
 
 	if err := settings.ReadInConfig(); err != nil {
-		panic(err)
+		fmt.Println("--- CONFIG FILE NOT FOUND - USING DEFAULTS ---")
 	}
 }
 
 func setDefaults() {
-	settings.SetDefault("webhook.port", 80)
+	settings.SetDefault("webhook.port", 8080)
+	settings.SetDefault("plugin.enable", true)
+	settings.SetDefault("plugin.disabled", "")
 }
 
 func setOptions() {
-	flag.Bool("plugin.disabled", false, "disable plugins")
+	flag.Bool("plugin.enable", true, "enable plugins")
+	flag.String("plugin.disabled", "", "list of plugins to disable")
+	flag.Int("webhook.port", 0, "webhook port")
 
 	flag.Parse()
 

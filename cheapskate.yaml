@@ -1,4 +1,0 @@
-# This is an example only configuration. This should be edited for deployment
-webhook:
-  port: 8080
-

@@ -5,3 +5,6 @@ build:
 
 run: build
 	./bin/cheapskate
+
+test:
+	vgo test ./...
