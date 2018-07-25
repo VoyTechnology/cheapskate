@@ -10,7 +10,7 @@ One and only true CPSSD Bot
 ## Dependencies
 
 1. [Go Programming Language][1]
-2. `go get -u golang.org/x/vgo`
+2. `go get -u golang.org/x/vgo` (until Go 1.11 comes out ~ August 2018)
 
 [1]: https://golang.org
 
