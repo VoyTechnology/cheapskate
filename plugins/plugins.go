@@ -170,7 +170,6 @@ type Action struct {
 
 // AddAction to the action stream
 func AddAction(a *Action) {
-	glog.V(1).Infof("received action from %s", a.Origin.Name())
 	glog.V(2).Infof("data: %s", a.Data)
 
 	done := false
@@ -192,16 +191,18 @@ func AddAction(a *Action) {
 
 		switch p.Type() {
 		case CommandType:
-			if strings.HasPrefix(string(a.Data), p.Register()) {
+			if strings.HasPrefix(strings.ToLower(string(a.Data)), p.Register()) {
 				glog.V(2).Infof("Sending action to command %s", p.Name())
 				done = true
 				go p.Do(a)
+				break
 			}
 		case RegexType:
 			if re := compiledRegex[p.Name()]; re.Match(a.Data) {
 				glog.V(2).Infof("Sending action to regex %s", p.Name())
 				done = true
 				go p.Do(a)
+				break
 			}
 		// This should mostly be handled by the individual target, but we catch
 		// it just in case
@@ -210,10 +211,24 @@ func AddAction(a *Action) {
 
 			done = true
 			go p.Do(a)
+			break
 		}
 	}
 
+	glog.V(2).Infof("Nothing was done, sending action back to origin %s", a.Origin.Name())
 	if !done {
-		a.Origin.NoAction()
+		a.Origin.Do(a)
 	}
+}
+
+// TrimPrefix is a custom helper function which also removes the words if they
+// are uppercase
+func TrimPrefix(s, prefix string) string {
+	pre := s
+	s = strings.TrimPrefix(s, prefix+" ")
+	if pre == s {
+		s = strings.TrimPrefix(s, strings.ToUpper(prefix+" "))
+	}
+
+	return s
 }

@@ -2,7 +2,9 @@
 
 package plugins
 
-import "strings"
+import (
+	"strings"
+)
 
 type clapPlugin struct{}
 
@@ -27,16 +29,10 @@ func (clapPlugin) Register() string {
 }
 
 func (p *clapPlugin) Do(a *Action) error {
-	split := strings.Split(strings.TrimPrefix(string(a.Data), "/clap "), " ")
+	split := strings.Split(TrimPrefix(string(a.Data), "/clap"), " ")
 
-	withClap := strings.Join(split, " 👏 ")
-
-	go AddAction(&Action{
-		Origin:  p,
-		Target:  a.Origin,
-		Command: "response",
-		Data:    []byte(withClap),
-	})
+	a.Data = []byte(strings.Join(split, " 👏 "))
+	AddAction(a)
 	return nil
 }
 

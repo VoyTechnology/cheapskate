@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 // testerIntegrationPlugin is designed to be used to manually trigger certain actions.
@@ -33,9 +32,7 @@ func (*testerIntegrationPlugin) Register() string {
 // Do implements the function. The accepted commands are as follows:
 //	response - if the integration is expecting back a response
 func (p *testerIntegrationPlugin) Do(a *Action) error {
-	if a.Command == "response" {
-		p.msg <- a.Data
-	}
+	p.msg <- a.Data
 
 	return nil
 }
@@ -91,7 +88,7 @@ func (p *testerCommandPlugin) Do(a *Action) error {
 		Command: "response",
 		Data: []byte(fmt.Sprintf(
 			"got message with data %s",
-			strings.TrimPrefix(string(a.Data), "/tester "))),
+			TrimPrefix(string(a.Data), "/tester"))),
 	})
 	return nil
 }
