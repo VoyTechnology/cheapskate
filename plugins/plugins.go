@@ -166,6 +166,9 @@ type Action struct {
 
 	// Response to the action. Given as a channel when something is done
 	Response chan []byte
+
+	// Marked when there is nothing else to do with the command.
+	Done bool
 }
 
 // AddAction to the action stream
@@ -179,12 +182,19 @@ func AddAction(a *Action) {
 		glog.V(1).Infof("Sending directly to %s from %s",
 			a.Target.Name(), a.Origin.Name())
 
-		a.Target.Do(a)
+		go a.Target.Do(a)
+		lastAction = a
 		done = true
 		return
 	}
 
+	var action func(*Action) error
+
 	for _, p := range registeredPlugins {
+		if a.Done {
+			break
+		}
+
 		if p.Name() == a.Origin.Name() {
 			continue
 		}
@@ -194,14 +204,14 @@ func AddAction(a *Action) {
 			if strings.HasPrefix(strings.ToLower(string(a.Data)), p.Register()) {
 				glog.V(2).Infof("Sending action to command %s", p.Name())
 				done = true
-				go p.Do(a)
+				action = p.Do
 				break
 			}
 		case RegexType:
 			if re := compiledRegex[p.Name()]; re.Match(a.Data) {
 				glog.V(2).Infof("Sending action to regex %s", p.Name())
 				done = true
-				go p.Do(a)
+				action = p.Do
 				break
 			}
 		// This should mostly be handled by the individual target, but we catch
@@ -210,27 +220,41 @@ func AddAction(a *Action) {
 			glog.V(2).Infof("Sending action to integration %s", p.Name())
 
 			done = true
-			go p.Do(a)
+			action = p.Do
 			break
 		}
 	}
 
-	glog.V(2).Infof("Nothing was done, sending action back to origin %s", a.Origin.Name())
 	if !done {
-		a.Origin.Do(a)
+		glog.V(2).Infof("Nothing was done, sending action back to origin %s",
+			a.Origin.Name())
+		action = a.Origin.Do
 	}
+
+	go func() {
+		action(a)
+
+		// I am not sure do we want to actually keep it like that. Perhaps we should
+		// add action store and last action message with IDs or something.
+		lastAction = a
+	}()
 }
+
+// This is pretty hacky and a bad solution. Ideally this should be somehow
+// saved in a store to ensure that we preserve the last message. This is only
+// required for the last message, and is pretty bad. Let's not do it ever again.
+var lastAction *Action
 
 // TrimPrefix is a custom helper function which also removes the words if they
 // are uppercase
 func TrimPrefix(s, prefix string) string {
 	pre := s
-	s = strings.TrimPrefix(s, prefix+" ")
+	s = strings.TrimPrefix(s, prefix)
 	if pre == s {
-		s = strings.TrimPrefix(s, strings.ToUpper(prefix+" "))
+		s = strings.TrimPrefix(s, strings.ToUpper(prefix))
 	}
 
-	return s
+	return strings.TrimSpace(s)
 }
 
 // RegisterPlugin registers a single plugin
