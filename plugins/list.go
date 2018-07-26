@@ -12,5 +12,6 @@ func init() {
 		newAppendPlugin(),
 		newClapPlugin(),
 		newUppercasePlugin(),
+		newLastPlugin(),
 	})
 }
