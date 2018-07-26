@@ -2,32 +2,17 @@
 
 package plugins
 
-// Append some text
-type appendPlugin struct{}
-
-func (appendPlugin) Name() string {
-	return "append"
-}
-
-func (appendPlugin) Type() Type {
-	return CommandType
-}
-
-func (appendPlugin) Authors() []string {
-	return []string{
-		"Aaron Delaney <devoxel@gmail.com>",
+func newAppendPlugin() *PluginInfo {
+	return &PluginInfo{
+		PluginName: "append",
+		PluginType: CommandType,
+		PluginAuthors: []string{
+			"Aaron Delaney <devoxel@gmail.com>",
+		},
+		RegisterKeyword: "/append",
+		Action: func(a *Action) error {
+			// TODO: Implement this.
+			return nil
+		},
 	}
 }
-
-func (appendPlugin) Register() string {
-	return "/append"
-}
-
-func (appendPlugin) Do(a *Action) error {
-	// TODO: Get last message somehow..
-
-	// TODO: Implement this.. Honestly I have no idea what this does.
-	return nil
-}
-
-func (appendPlugin) NoAction() {}
