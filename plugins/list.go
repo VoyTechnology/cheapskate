@@ -2,11 +2,15 @@
 
 package plugins
 
-var plugins = []Plugin{
-	new(testerIntegrationPlugin),
-	new(testerCommandPlugin),
-	new(angryPlugin),
-	new(appendPlugin),
-	new(clapPlugin),
-	new(uppercasePlugin),
+var plugins []Plugin
+
+func init() {
+	RegisterPlugins([]Plugin{
+		newTesterCommandPlugin(),
+		new(testerIntegrationPlugin),
+		newAngryPlugin(),
+		newAppendPlugin(),
+		newClapPlugin(),
+		newUppercasePlugin(),
+	})
 }

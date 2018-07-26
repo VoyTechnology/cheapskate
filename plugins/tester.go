@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -60,37 +59,19 @@ func (p *testerIntegrationPlugin) NoAction() {
 	p.msg <- []byte("")
 }
 
-// Registeres a tester
-type testerCommandPlugin struct{}
-
-func (*testerCommandPlugin) Type() Type {
-	return CommandType
-}
-
-func (*testerCommandPlugin) Name() string {
-	return "tester_command"
-}
-
-func (*testerCommandPlugin) Authors() []string {
-	return []string{
-		"Wojtek Bednarzak <wojtek.bednarzak@gmail.com",
+func newTesterCommandPlugin() *PluginInfo {
+	return &PluginInfo{
+		PluginName: "tester_command",
+		PluginType: CommandType,
+		PluginAuthors: []string{
+			"Wojtek Bednarzak <wojtek.bednarzak@gmail.com",
+		},
+		RegisterKeyword: "/tester",
+		Action: func(a *Action) error {
+			a.Data = []byte("got message with data " + TrimPrefix(
+				string(a.Data), "/tester"))
+			AddAction(a)
+			return nil
+		},
 	}
 }
-
-func (*testerCommandPlugin) Register() string {
-	return "/tester"
-}
-
-func (p *testerCommandPlugin) Do(a *Action) error {
-	go AddAction(&Action{
-		Origin:  p,
-		Target:  a.Origin,
-		Command: "response",
-		Data: []byte(fmt.Sprintf(
-			"got message with data %s",
-			TrimPrefix(string(a.Data), "/tester"))),
-	})
-	return nil
-}
-
-func (testerCommandPlugin) NoAction() {}

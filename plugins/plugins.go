@@ -232,3 +232,51 @@ func TrimPrefix(s, prefix string) string {
 
 	return s
 }
+
+// RegisterPlugin registers a single plugin
+func RegisterPlugin(p Plugin) {
+	plugins = append(plugins, p)
+}
+
+// RegisterPlugins registers a whole list of plugins
+func RegisterPlugins(p []Plugin) {
+	plugins = append(plugins, p...)
+}
+
+// PluginInfo describes the functions uses in the plugins. It is used to create
+// quick and easy plugins without needing all the control of the normal plugin
+type PluginInfo struct {
+	PluginName      string
+	PluginType      Type
+	PluginAuthors   []string
+	RegisterKeyword string
+	Action          func(*Action) error
+}
+
+// Name of the plugin
+func (p PluginInfo) Name() string {
+	return p.PluginName
+}
+
+// Authors of the plugin
+func (p PluginInfo) Authors() []string {
+	return p.PluginAuthors
+}
+
+// Type of the plugin
+func (p PluginInfo) Type() Type {
+	return p.PluginType
+}
+
+// Register the plugin
+func (p PluginInfo) Register() string {
+	return p.RegisterKeyword
+}
+
+// Do plugin action
+func (p PluginInfo) Do(a *Action) error {
+	return p.Action(a)
+}
+
+// NoAction of the plugin
+func (p PluginInfo) NoAction() {}
