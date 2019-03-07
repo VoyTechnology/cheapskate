@@ -17,7 +17,7 @@ func newClapPlugin() *PluginInfo {
 		},
 		RegisterKeyword: "/clap",
 		Action: func(a *Action) error {
-			split := strings.Split(TrimPrefix(string(a.Data), "/clap"), " ")
+			split := strings.Fields(TrimPrefix(string(a.Data), "/clap"))
 
 			a.Data = []byte(strings.Join(split, " 👏 "))
 			AddAction(a)
