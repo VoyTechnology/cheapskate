@@ -1,0 +1,31 @@
+version: 2
+jobs:
+  test:
+    working_directory: ~/paranoid
+    docker:
+    - image: circleci/golang:1.12
+    steps:
+    - checkout
+    - restore_cache:
+        keys:
+        - go-mod-{{ checksum "go.sum" }}
+    - run: go get ./...
+    - run: go build ./...
+    - run: mkdir -p /tmp/cover /tmp/test-results
+    - run: gotestsum --junitfile /tmp/test-results/unit-tests.xml
+    - store_test_results:
+        path: /tmp/test-results
+    - run: go test -coverprofile=/tmp/cover/cover.out -covermode=atomic ./... || true
+    - run: bash <(curl -s https://codecov.io/bash) -t 20126644-b1de-4d53-ad81-dd6bea2c54e1 -f /tmp/cover/cover.out
+    - save_cache:
+        key: go-mod-{{ checksum "go.sum" }}
+        paths:
+          - "/go/pkg/mod"
+    - store_artifacts:
+        path: /tmp/artifacts
+
+workflows:
+  version: 2
+  test:
+    jobs:
+    - test
