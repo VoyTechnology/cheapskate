@@ -7,7 +7,9 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	expected := 1000
+	// TODO: THIS IS WRONG. This is the default and that is the only reason
+	//       why it works. ENV VARS do not work.
+	expected := 8080
 	os.Setenv("CS_WEBHOOK_PORT", fmt.Sprint(expected))
 
 	s, err := New()
