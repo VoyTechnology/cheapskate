@@ -1,13 +1,21 @@
 package settings
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"testing"
+)
 
-func TestSet(t *testing.T) {
-	key := "test"
-	value := "expected"
+func TestBasic(t *testing.T) {
+	expected := 1000
+	os.Setenv("CS_WEBHOOK_PORT", fmt.Sprint(expected))
 
-	Set(key, value)
-	if got := settings.Get(key).(string); got != value {
-		t.Errorf("expected %s, got %s", value, got)
+	s, err := New()
+	if err != nil {
+		t.Fatalf("Init().Error = %v, want %v", err, nil)
+	}
+
+	if port := s.Webhook.Port; port != expected {
+		t.Errorf("Settings.Webhook.Port = %d, want %d", port, expected)
 	}
 }

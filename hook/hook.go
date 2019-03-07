@@ -7,7 +7,8 @@ import (
 	"net/http"
 
 	"github.com/cpssd-students/cheapskate/settings"
-	"github.com/golang/glog"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Errors
@@ -18,10 +19,10 @@ var (
 var started = false
 
 // Run the webhook
-func Run() error {
-	glog.Info("Starting web server")
+func Run(log zerolog.Logger, cfg settings.Webhook) error {
+	log.Info().Int("port", cfg.Port).Msg("starting web server")
 	started = true
-	return http.ListenAndServe(fmt.Sprintf(":%d", settings.Get("webhook.port").(int)), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), nil)
 }
 
 // RegisterHandleFunc allows to register the integration
@@ -30,7 +31,7 @@ func RegisterHandleFunc(path string, f http.Handler) error {
 		return ErrServerAlreadyStarted
 	}
 
-	glog.Infof("Registering %s", path)
+	log.Info().Str("endpoint", path).Msg("registered")
 
 	http.Handle(path, f)
 	return nil

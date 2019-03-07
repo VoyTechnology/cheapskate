@@ -2,14 +2,16 @@
 package plugins
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"strings"
 
+	"github.com/golang/glog"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+
 	"github.com/cpssd-students/cheapskate/hook"
 	"github.com/cpssd-students/cheapskate/settings"
-	"github.com/golang/glog"
 )
 
 // Errors
@@ -55,6 +57,10 @@ func Get(name string) (Plugin, error) {
 
 // Plugin defines the general interface the plugins must use
 type Plugin interface {
+	// Initialize the pluggin, passing in all the necessary basic information
+	// TODO: Enable on all plugins
+	// Init(log zerolog.Logger)
+
 	// Type of the plugin
 	Type() Type
 
@@ -85,14 +91,14 @@ var compiledRegex = make(map[string]*regexp.Regexp)
 var commandPlugins = make(map[string]Plugin)
 
 // Load the plugins
-func Load() error {
-	if !settings.Get("plugin.enable").(bool) {
-		glog.Info("Not loading any plugins")
+func Load(log zerolog.Logger, cfg settings.Plugin) error {
+	if !cfg.Enable {
+		log.Info().Msg("Not loading any plugins")
 		return nil
 	}
 
 	disabled := make(map[string]struct{})
-	for _, d := range strings.Split(settings.Get("plugin.disabled").(string), ",") {
+	for _, d := range cfg.Disabled {
 		disabled[d] = struct{}{}
 	}
 
@@ -102,39 +108,36 @@ func Load() error {
 		}
 
 		if _, isDisabled := disabled[p.Name()]; isDisabled {
-			glog.Infof("Ignoring plugin %s - disabled", p.Name())
+			log.Info().Str("plugin", p.Name()).Msg("ignoring")
 			continue
 		}
 
-		glog.Infof("Registering plugin %s of type %s", p.Name(), p.Type())
+		// p.Init(log.With().Str("plugin", p.Name()).Logger())
+
+		log.Info().Str("plugin", p.Name()).Str("type", p.Type().String()).Msg("registered")
 
 		switch p.Type() {
 		case IntegrationType:
 			handler, ok := p.(http.Handler)
 			if !ok {
-				glog.Fatalf(
-					"Plugin %s does not implement ServeHTTP",
+				return errors.Errorf("plugin %s does not implement ServeHTTP",
 					p.Name())
 			}
 
 			if err := hook.RegisterHandleFunc(p.Register(), handler); err != nil {
-				return err
+				return errors.Wrap(err, "registering webhook")
 			}
 		case CommandType:
 			if binded, exists := commandPlugins[p.Register()]; exists {
-				glog.Fatalf(
-					"Plugin %s tried to register command %s which is already binded to plugin %s",
-					p.Name(), p.Register(), binded.Name(),
-				)
+				return errors.Errorf("plugin %s tried to register command %s which is already binded to plugin %s",
+					p.Name(), p.Register(), binded.Name())
 			}
 			commandPlugins[p.Register()] = p
 		case RegexType:
 			re, err := regexp.Compile(p.Register())
 			if err != nil {
-				glog.Fatalf(
-					"Plugin %s tried to register invalid regex %s: %v",
-					p.Name(), p.Register(), err,
-				)
+				return errors.Errorf("plugin %s tried to register invalid regex %s: %v",
+					p.Name(), p.Register(), err)
 			}
 			compiledRegex[p.Name()] = re
 		}

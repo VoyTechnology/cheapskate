@@ -3,59 +3,29 @@
 package settings
 
 import (
-	"flag"
-	"fmt"
-
-	"github.com/spf13/pflag"
-
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-
-	// Make sure glog registers its flags
-	_ "github.com/golang/glog"
 )
 
-var settings *viper.Viper
+// New parses the settings and returns them
+func New() (Settings, error) {
+	s := viper.New()
+	setDefaults(s)
 
-func init() {
-	settings = viper.New()
+	s.SetEnvPrefix("CHEAPSKATE")
+	s.AutomaticEnv()
 
-	setDefaults()
-
-	settings.SetConfigName("cheapskate")
-	settings.AddConfigPath("/etc/cpssd")
-	settings.AddConfigPath(".")
-	setOptions()
-
-	if err := settings.ReadInConfig(); err != nil {
-		fmt.Println("--- CONFIG FILE NOT FOUND - USING DEFAULTS ---")
+	var c Settings
+	if err := s.Unmarshal(&c); err != nil {
+		return Settings{}, errors.Wrap(err, "unable to parse settings")
 	}
+
+	return c, nil
 }
 
-func setDefaults() {
-	settings.SetDefault("webhook.port", 8080)
-	settings.SetDefault("plugin.enable", true)
-	settings.SetDefault("plugin.disabled",
+func setDefaults(s *viper.Viper) {
+	s.SetDefault("webhook.port", 8080)
+	s.SetDefault("plugin.enable", true)
+	s.SetDefault("plugin.disabled",
 		"tester_integration,tester_command")
-}
-
-func setOptions() {
-	flag.Bool("plugin.enable", true, "enable plugins")
-	flag.String("plugin.disabled", "", "list of plugins to disable, comma separated")
-	flag.Int("webhook.port", 0, "webhook port")
-
-	flag.Parse()
-
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	pflag.Parse()
-	settings.BindPFlags(pflag.CommandLine)
-}
-
-// Get a setting value
-func Get(key string) interface{} {
-	return settings.Get(key)
-}
-
-// Set a setting value
-func Set(key string, value interface{}) {
-	settings.Set(key, value)
 }
