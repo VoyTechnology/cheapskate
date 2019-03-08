@@ -9,6 +9,9 @@ WORKDIR /src
 
 COPY go.mod .
 COPY go.sum .
+
+RUN go get -v ./...
+
 COPY . .
 
 # TODO: Consider how this docker image can be build for non-x86 targets
