@@ -3,7 +3,7 @@ FROM golang:1.12-alpine AS builder
 RUN mkdir /user && \
     echo 'nobody:x:65534:65534:nobody:/:' > /user/password && \
     echo 'nobody:x:65534:' > /user/group
-RUN apk add 
+RUN apk --update add git
 
 WORKDIR /src
 
