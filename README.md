@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/VoyTechnology/cheapskate/branch/master/graph/badge.svg)](https://codecov.io/gh/VoyTechnology/cheapskate)
 
 
-One and only true CPSSD Bot
+One and only true universal bot
 
 ---
 
