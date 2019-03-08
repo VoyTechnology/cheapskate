@@ -12,8 +12,8 @@ func New() (Settings, error) {
 	s := viper.New()
 	setDefaults(s)
 
-	s.SetEnvPrefix("CHEAPSKATE")
 	s.AutomaticEnv()
+	s.SetEnvPrefix("CHEAPSKATE")
 
 	var c Settings
 	if err := s.Unmarshal(&c); err != nil {
