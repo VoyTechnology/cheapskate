@@ -10,7 +10,7 @@ WORKDIR /src
 COPY go.mod .
 COPY go.sum .
 
-RUN go get -v ./...
+RUN go mod download
 
 COPY . .
 
