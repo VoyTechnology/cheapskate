@@ -15,7 +15,7 @@ RUN go get -v ./...
 COPY . .
 
 # TODO: Consider how this docker image can be build for non-x86 targets
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOFLAGS=-mod=vendor go build -a -ldflags '-s' -installsuffix cgo -o /cheapskate
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-s' -installsuffix cgo -o /cheapskate
 
 #############
 
