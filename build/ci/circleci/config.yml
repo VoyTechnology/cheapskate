@@ -1,7 +1,7 @@
 version: 2
 jobs:
   test:
-    working_directory: ~/paranoid
+    working_directory: ~/src
     docker:
     - image: circleci/golang:1.12
     steps:
@@ -9,7 +9,7 @@ jobs:
     - restore_cache:
         keys:
         - go-mod-{{ checksum "go.sum" }}
-    - run: go get ./...
+    - run: go mod download
     - run: go build ./...
     - run: mkdir -p /tmp/cover /tmp/test-results
     - run: gotestsum --junitfile /tmp/test-results/unit-tests.xml
